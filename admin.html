@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    a.logout { float: right; margin-bottom: 20px; color: red; text-decoration: none; }
+    a.logout:hover { text-decoration: underline; }
+    #messages { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; background: #fafafa; }
+    #command-box { margin-top: 20px; }
+    input[type="text"] { width: 400px; padding: 8px; font-size: 14px; }
+    button { padding: 8px 16px; }
+    .admin-msg { color: green; font-weight: bold; }
+    .system-msg { color: red; font-style: italic; }
+  </style>
+</head>
+<body>
+
+<a href="/logout" class="logout">Logout</a>
+<h1>Admin Panel</h1>
+<p>Welcome, <strong>Admin</strong>! You can view messages and run moderation commands.</p>
+
+<h2>Messages</h2>
+<div id="messages"></div>
+
+<div id="command-box">
+  <h3>Command Line</h3>
+  <input type="text" id="commandInput" placeholder="Type command (e.g. /ban liam)" />
+  <button onclick="runCommand()">Execute</button>
+  <pre id="commandOutput"></pre>
+</div>
+
+<script>
+  const messagesDiv = document.getElementById('messages');
+  const output = document.getElementById('commandOutput');
+
+  function addMessage(user, message, timestamp, type = 'user') {
+    const div = document.createElement('div');
+    const time = new Date(timestamp).toLocaleString();
+
+    if (type === 'admin') {
+      div.className = 'admin-msg';
+      div.textContent = `[${time}] [ADMIN] ${message}`;
+    } else if (type === 'system') {
+      div.className = 'system-msg';
+      div.textContent = `[${time}] [SYSTEM] ${message}`;
+    } else {
+      div.textContent = `[${time}] ${user}: ${message}`;
+    }
+    messagesDiv.appendChild(div);
+  }
+
+  async function loadMessages() {
+    const res = await fetch('/api/messages');
+    const messages = await res.json();
+    messagesDiv.innerHTML = '';
+    messages.forEach(msg => {
+      addMessage(msg.user, msg.message, msg.timestamp, msg.type);
+    });
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  async function runCommand() {
+    const cmd = document.getElementById('commandInput').value.trim();
+    if (!cmd) return;
+
+    const res = await fetch('/api/admin/command', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command: cmd }),
+    });
+    const data = await res.json();
+
+    output.textContent = data.message || 'No response';
+
+    loadMessages();
+    document.getElementById('commandInput').value = '';
+  }
+
+  loadMessages();
+</script>
+  <body>
+    <html>
+      
+    </html>
+    </html>
+  </body>
+</body>
+</html>
